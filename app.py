@@ -4,7 +4,7 @@ import matplotlib
 matplotlib.use('Agg') # Set the backend for Matplotlib to work in a web server context
 import matplotlib.pyplot as plt # The primary plotting interface
 import os # To handle file paths
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, abort
 from database import db
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -108,8 +108,40 @@ def show_portfolio():
                            total_market_value=total_market_value, 
                            total_profit_loss=total_profit_loss)
 
+@app.route('/operations_list')
+def list_operations():
+    """Queries and displays a list of all operations."""
+    # Query the database for all operations, ordering by most recent first
+    all_operations = db.session.scalars(db.select(Operation).order_by(Operation.operation_date.desc())).all()
+    
+    return render_template('operations_list.html', operations=all_operations)
 
+@app.route('/delete_operation/<int:operation_id>', methods=['POST'])
+def delete_operation(operation_id):
+    op_to_delete = db.session.get(Operation, operation_id)
+    if op_to_delete is None:
+        abort(404)
+    try:
+        db.session.delete(op_to_delete)
+        db.session.commit()
+        print(f"Operation {operation_id} deleted successfully.")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error deleting operation {operation_id}: {e}")
 
+    return redirect(url_for('list_operations')) 
+
+@app.route('/edit_operation/<int:operation_id>', methods=['GET','POST'])
+def edit_operation(operation_id):
+    op_to_edit = db.session.get(Operation, operation_id)
+    if op_to_edit is None:
+        abort(404)
+    
+    if request.method == 'POST':
+        #TODO: Implement the logic to edit the operation
+        pass
+    
+    return render_template('edit_operation.html', op=op_to_edit) 
 
 @app.route('/add_operation', methods=['GET','POST'])
 def add_operation():

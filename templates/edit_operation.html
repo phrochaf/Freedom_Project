@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Operação{% endblock %}
+
+{% block content %}
+    <h1>Editar Operação</h1>
+
+    <form method="POST">
+        <div class="mb-3">
+            <label for="ticker" class="form-label">Ticker:</label>
+            <input type="text" class="form-control" id="ticker" name="ticker" value="{{ op.asset.ticker }}" readonly>
+        </div>
+
+        <div class="mb-3">
+            <label for="operation_type" class="form-label">Tipo de Operação:</label>
+            <select class="form-select" id="operation_type" name="operation_type" required>
+                <option value="Buy" {% if op.operation_type == 'Buy' %}selected{% endif %}>Compra</option>
+                <option value="Sell" {% if op.operation_type == 'Sell' %}selected{% endif %}>Venda</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="quantity" class="form-label">Quantidade:</label>
+            <input type="number" class="form-control" id="quantity" name="quantity" step="any" value="{{ op.quantity }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="unit_price" class="form-label">Preço por Unidade (R$):</label>
+            <input type="number" class="form-control" id="unit_price" name="unit_price" step="0.01" value="{{ op.unit_price }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="operation_date" class="form-label">Data da Operação:</label>
+            <input type="date" class="form-control" id="operation_date" name="operation_date" value="{{ op.operation_date.strftime('%Y-%m-%d') }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="costs" class="form-label">Custos Operacionais (R$):</label>
+            <input type="number" class="form-control" id="costs" name="costs" step="0.01" value="{{ op.costs }}" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        <a href="{{ url_for('list_operations') }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+{% endblock %}

@@ -6,21 +6,21 @@
     <h1>Nova Operação</h1>
 
     <form action="{{ url_for('add_operation') }}" method="POST">
-        <div class="form-group">
-            <label for="ticker">Ticker:</label>
-            <input type="text" id="ticker" name="ticker" placeholder="e.g., PETR4, BBSE3" required>
+        <div class="mb-3">
+            <label for="ticker" class="form-label">Ticker:</label>
+            <input type="text" id="ticker" name="ticker" placeholder="e.g., PETR4, BBSE3" required class="form-control">
         </div>
     
-        <div class="form-group">
-            <label for="asset_name">Nome da Empresa ou Fundo (e.g., Petrobras S.A.):</label>
+        <div class="mb-3">
+            <label for="asset_name" class="form-label">Nome da Empresa ou Fundo (e.g., Petrobras S.A.):</label>
             <p style="font-size: 0.8em; color: #666; margin-top: -10px;">(Only needed if ticker is new)</p>
-            <input type="text" id="asset_name" name="asset_name">
+            <input type="text" id="asset_name" name="asset_name" class="form-control">
         </div>
     
-        <div class="form-group">
-            <label for="asset_type">Tipo de Ativo:</label>
+        <div class="mb-3">
+            <label for="asset_type" class="form-label">Tipo de Ativo:</label>
             <p style="font-size: 0.8em; color: #666; margin-top: -10px;">(Only needed if ticker is new)</p>
-            <select id="asset_type" name="asset_type">
+            <select id="asset_type" name="asset_type" class="form-select">
                 <option value="">-- Select Type (if new) --</option>
                 <option value="Ação">Stock (Ação)</option>
                 <option value="FII">Real Estate Fund (FII)</option>
@@ -29,35 +29,35 @@
                 <option value="Renda Fixa">Fixed Income (Renda Fixa)</option>
             </select>
         </div>
-        <div class="form-group">
-            <label for="operation_type">Tipo de Operação:</label>
-            <select id="operation_type" name="operation_type" required>
+        <div class="mb-3">
+            <label for="operation_type" class="form-label">Tipo de Operação:</label>
+            <select id="operation_type" name="operation_type" required class="form-select">
                 <option value="Buy">Buy (Compra)</option>
                 <option value="Sell">Sell (Venda)</option>
             </select>
         </div>
-        <div class="form-group">
-            <label for="quantity">Quantidade:</label>
-            <input type="number" id="quantity" name="quantity" step="any" placeholder="e.g., 100 or 0.5" required>
+        <div class="mb-3">
+            <label for="quantity" class="form-label">Quantidade:</label>
+            <input type="number" id="quantity" name="quantity" step="any" placeholder="e.g., 100 or 0.5" required class="form-control">
         </div>
 
-        <div class="form-group">
-            <label for="unit_price">Preço por Unidade (R$):</label>
-            <input type="number" id="unit_price" name="unit_price" step="0.01" placeholder="e.g., 30.50" required>
+        <div class="mb-3">
+            <label for="unit_price" class="form-label">Preço por Unidade (R$):</label>
+            <input type="number" id="unit_price" name="unit_price" step="0.01" placeholder="e.g., 30.50" required class="form-control">
         </div>
 
-        <div class="form-group">
-            <label for="operation_date">Data da Operação:</label>
-            <input type="date" id="operation_date" name="operation_date" required>
+        <div class="mb-3">
+            <label for="operation_date" class="form-label">Data da Operação:</label>
+            <input type="date" id="operation_date" name="operation_date" required class="form-control">
         </div>
 
-        <div class="form-group">
-            <label for="costs">Custos Operacionais (R$):</label>
-            <input type="number" class="form-control" id="costs" name="costs" step="0.01" value="0.00" required>
+        <div class="mb-3">
+            <label for="costs" class="form-label">Custos Operacionais (R$):</label>
+            <input type="number" id="costs" name="costs" step="0.01" value="0.00" required class="form-control">
         </div>
         
-        <div class="form-group">
-            <input type="submit" value="Save Operation to Database">
+        <div class="mb-3">
+            <input type="submit" value="Save Operation to Database" class="btn btn-primary">
         </div>
     </form>
 
