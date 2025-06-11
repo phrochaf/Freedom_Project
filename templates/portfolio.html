@@ -34,15 +34,15 @@
             </thead>
             <tbody>
                 {# 'posicoes' is now a list of dicts, not a dict of dicts #}
-                {% for item in posicoes %}
+                {% for item in positions %}
                     <tr>
                         <td>
-                            <strong>{{item.posicao.ativo.ticker}}</strong>
-                            <small>{{item.posicao.ativo.nome_empresa_ou_fundo}}</small>
+                            <strong>{{item.position.asset.ticker}}</strong>
+                            <small>{{item.position.asset.name}}</small>
                         </td>
-                        <td>{{ "%.2f"|format(item.posicao.quantidade) }}</td>
-                        <td>R$ {{ "%.2f"|format(item.posicao.preco_medio) }}</td>
-                        <td>R$ {{ "%.2f"|format(item.posicao.valor_total_investido) }}</td>
+                        <td>{{ "%.2f"|format(item.position.quantity) }}</td>
+                        <td>R$ {{ "%.2f"|format(item.position.average_price) }}</td>
+                        <td>R$ {{ "%.2f"|format(item.position.total_cost) }}</td>
 
                         <td>
                             {% if item.current_price %}
@@ -73,7 +73,7 @@
             <tfoot>
                 <tr class="total-row">
                     <td colspan="3">Total Investido</td>
-                    <td>R$ {{ "%.2f"|format(total_cost_basis) }}</td>
+                    <td>R$ {{ "%.2f"|format(total_cost) }}</td>
                     <td>--</td>
                     <td>R$ {{ "%.2f"|format(total_market_value) }}</td>
                     <td>

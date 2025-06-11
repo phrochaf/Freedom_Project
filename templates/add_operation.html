@@ -31,15 +31,15 @@
         </div>
     
         <div class="form-group">
-            <label for="nome_empresa">Asset Name (e.g., Petrobras S.A.):</label>
+            <label for="asset_name">Nome da Empresa ou Fundo (e.g., Petrobras S.A.):</label>
             <p style="font-size: 0.8em; color: #666; margin-top: -10px;">(Only needed if ticker is new)</p>
-            <input type="text" id="nome_empresa" name="nome_empresa">
+            <input type="text" id="asset_name" name="asset_name">
         </div>
     
         <div class="form-group">
-            <label for="tipo_ativo">Asset Type:</label>
+            <label for="asset_type">Tipo de Ativo:</label>
             <p style="font-size: 0.8em; color: #666; margin-top: -10px;">(Only needed if ticker is new)</p>
-            <select id="tipo_ativo" name="tipo_ativo">
+            <select id="asset_type" name="asset_type">
                 <option value="">-- Select Type (if new) --</option>
                 <option value="Ação">Stock (Ação)</option>
                 <option value="FII">Real Estate Fund (FII)</option>
@@ -49,30 +49,30 @@
             </select>
         </div>
         <div class="form-group">
-            <label for="tipo_operacao">Operation Type:</label>
-            <select id="tipo_operacao" name="tipo_operacao" required>
+            <label for="operation_type">Tipo de Operação:</label>
+            <select id="operation_type" name="operation_type" required>
                 <option value="Compra">Buy (Compra)</option>
                 <option value="Venda">Sell (Venda)</option>
             </select>
         </div>
         <div class="form-group">
-            <label for="quantidade">Quantity:</label>
-            <input type="number" id="quantidade" name="quantidade" step="any" placeholder="e.g., 100 or 0.5" required>
+            <label for="quantity">Quantidade:</label>
+            <input type="number" id="quantity" name="quantity" step="any" placeholder="e.g., 100 or 0.5" required>
         </div>
 
         <div class="form-group">
-            <label for="preco_unitario">Price per Unit (R$):</label>
-            <input type="number" id="preco_unitario" name="preco_unitario" step="0.01" placeholder="e.g., 30.50" required>
+            <label for="unit_price">Preço por Unidade (R$):</label>
+            <input type="number" id="unit_price" name="unit_price" step="0.01" placeholder="e.g., 30.50" required>
         </div>
 
         <div class="form-group">
-            <label for="data_operacao">Operation Date:</label>
-            <input type="date" id="data_operacao" name="data_operacao" required>
+            <label for="operation_date">Data da Operação:</label>
+            <input type="date" id="operation_date" name="operation_date" required>
         </div>
 
         <div class="form-group">
-            <label for="custos_operacionais">Operational Costs (R$):</label>
-            <input type="number" id="custos_operacionais" name="custos_operacionais" step="0.01" value="0.00" required>
+            <label for="costs">Custos Operacionais (R$):</label>
+            <input type="number" class="form-control" id="costs" name="costs" step="0.01" value="0.00" required>
         </div>
         
         <div class="form-group">
