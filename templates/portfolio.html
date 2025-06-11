@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Portfolio</title>
+    <style>
+        body { font-family: sans-serif; }
+        table { width: 95%; margin: 20px auto; border-collapse: collapse; font-size: 0.9em; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .total-row td { font-weight: bold; background-color: #e9e9e9; }
+        .profit { color: green; }
+        .loss { color: red; }
+        .nav-links { margin: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Meu Portfolio de Investimentos</h1>
+
+    {% if posicoes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Ativo</th>
+                    <th>Quantidade</th>
+                    <th>Preço Médio</th>
+                    <th>Valor Total</th>
+                    <th>Valor Atual</th>
+                    <th>Market Value</th>
+                    <th>Lucro/Perda</th>
+                </tr>
+            </thead>
+            <tbody>
+                {# 'posicoes' is now a list of dicts, not a dict of dicts #}
+                {% for item in posicoes %}
+                    <tr>
+                        <td>
+                            <strong>{{item.posicao.ativo.ticker}}</strong>
+                            <small>{{item.posicao.ativo.nome_empresa_ou_fundo}}</small>
+                        </td>
+                        <td>{{ "%.2f"|format(item.posicao.quantidade) }}</td>
+                        <td>R$ {{ "%.2f"|format(item.posicao.preco_medio) }}</td>
+                        <td>R$ {{ "%.2f"|format(item.posicao.valor_total_investido) }}</td>
+
+                        <td>
+                            {% if item.current_price %}
+                                R$ {{ "%.2f"|format(item.current_price) }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.market_value %}
+                                R$ {{ "%.2f"|format(item.market_value) }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.profit_loss %}
+                                <span class="{{'profit' if item.profit_loss     >= 0 else 'loss'}}">
+                                    R$ {{ "%.2f"|format(item.profit_loss) }}
+                                </span>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="3">Total Investido</td>
+                    <td>R$ {{ "%.2f"|format(total_cost_basis) }}</td>
+                    <td>--</td>
+                    <td>R$ {{ "%.2f"|format(total_market_value) }}</td>
+                    <td>
+                        <span class="{{'profit' if total_profit_loss >= 0 else 'loss'}}">
+                            R$ {{ "%.2f"|format(total_profit_loss) }}
+                        </span>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    {% else %}
+        <p>Nenhuma posição registrada.</p>
+    {% endif %}
+
+    <div class="nav-links">
+        <a href="{{ url_for('add_operation') }}">Adicionar Nova Operação</a>
+        <a href="{{ url_for('index') }}">Voltar para a página inicial</a>
+    </div>
+</body>
+</html>

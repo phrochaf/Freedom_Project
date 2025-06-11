@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Operação</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input[type="text"], input[type="number"], input[type="date"], select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50; color: white; padding: 10px 15px;
+            border: none; border-radius: 4px; cursor: pointer;
+        }
+        input[type="submit"]:hover { background-color: #45a049; }
+        .nav-link { margin-top: 20px; display: block; } 
+    </style>
+</head>
+<body>
+    <h1>Nova Operação</h1>
+
+    <form action="{{ url_for('add_operation') }}" method="POST">
+        <div class="form-group">
+            <label for="ticker">Ticker:</label>
+            <input type="text" id="ticker" name="ticker" placeholder="e.g., PETR4, BBSE3" required>
+        </div>
+    
+        <div class="form-group">
+            <label for="nome_empresa">Asset Name (e.g., Petrobras S.A.):</label>
+            <p style="font-size: 0.8em; color: #666; margin-top: -10px;">(Only needed if ticker is new)</p>
+            <input type="text" id="nome_empresa" name="nome_empresa">
+        </div>
+    
+        <div class="form-group">
+            <label for="tipo_ativo">Asset Type:</label>
+            <p style="font-size: 0.8em; color: #666; margin-top: -10px;">(Only needed if ticker is new)</p>
+            <select id="tipo_ativo" name="tipo_ativo">
+                <option value="">-- Select Type (if new) --</option>
+                <option value="Ação">Stock (Ação)</option>
+                <option value="FII">Real Estate Fund (FII)</option>
+                <option value="BDR">BDR</option>
+                <option value="ETF">ETF</option>
+                <option value="Renda Fixa">Fixed Income (Renda Fixa)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="tipo_operacao">Operation Type:</label>
+            <select id="tipo_operacao" name="tipo_operacao" required>
+                <option value="Compra">Buy (Compra)</option>
+                <option value="Venda">Sell (Venda)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="quantidade">Quantity:</label>
+            <input type="number" id="quantidade" name="quantidade" step="any" placeholder="e.g., 100 or 0.5" required>
+        </div>
+
+        <div class="form-group">
+            <label for="preco_unitario">Price per Unit (R$):</label>
+            <input type="number" id="preco_unitario" name="preco_unitario" step="0.01" placeholder="e.g., 30.50" required>
+        </div>
+
+        <div class="form-group">
+            <label for="data_operacao">Operation Date:</label>
+            <input type="date" id="data_operacao" name="data_operacao" required>
+        </div>
+
+        <div class="form-group">
+            <label for="custos_operacionais">Operational Costs (R$):</label>
+            <input type="number" id="custos_operacionais" name="custos_operacionais" step="0.01" value="0.00" required>
+        </div>
+        
+        <div class="form-group">
+            <input type="submit" value="Save Operation to Database">
+        </div>
+    </form>
+
+    <a href="{{ url_for('show_portfolio') }}" class="nav-link">View Portfolio</a>
+    <a href="{{ url_for('index') }}" class="nav-link">Back to Home</a>
+    
+</body>
+</html>
