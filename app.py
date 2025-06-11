@@ -4,7 +4,7 @@ import matplotlib
 matplotlib.use('Agg') # Set the backend for Matplotlib to work in a web server context
 import matplotlib.pyplot as plt # The primary plotting interface
 import os # To handle file paths
-from flask import Flask, render_template, request, redirect, url_for, abort
+from flask import Flask, render_template, request, redirect, url_for, abort, flash
 from database import db
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -16,6 +16,7 @@ from src.models.earning import Earning
 
 app = Flask(__name__)
 
+app.config['SECRET_KEY'] = 'a_very_secret_and_random_string_123'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///investiments.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -124,6 +125,7 @@ def delete_operation(operation_id):
     try:
         db.session.delete(op_to_delete)
         db.session.commit()
+        flash('Operação excluída com sucesso.', 'info')
         print(f"Operation {operation_id} deleted successfully.")
     except Exception as e:
         db.session.rollback()
@@ -138,9 +140,28 @@ def edit_operation(operation_id):
         abort(404)
     
     if request.method == 'POST':
-        #TODO: Implement the logic to edit the operation
-        pass
-    
+        try:
+            # 1. Get data from form
+            op_to_edit.operation_type = request.form.get('operation_type')
+            op_to_edit.quantity = Decimal(request.form.get('quantity'))
+            op_to_edit.unit_price = Decimal(request.form.get('unit_price'))
+            op_to_edit.costs = Decimal(request.form.get('costs'))
+
+            op_date_str = request.form.get('operation_date')
+            op_to_edit.operation_date = datetime.strptime(op_date_str, '%Y-%m-%d').date()
+
+            # 2. Database Logic
+            db.session.commit()
+            flash('Operação salva com sucesso!', 'success')
+            print(f"Operation {operation_id} updated successfully.")
+
+            return redirect(url_for('list_operations'))
+        
+        except (ValueError, InvalidOperation, TypeError) as e:
+            db.session.rollback()
+            print(f"Error processing form: {e}")
+            return redirect(url_for('edit_operation', operation_id=operation_id))
+
     return render_template('edit_operation.html', op=op_to_edit) 
 
 @app.route('/add_operation', methods=['GET','POST'])
@@ -187,7 +208,7 @@ def add_operation():
             # 4. Add new operation
             db.session.add(new_operation)
             db.session.commit()
-
+            flash('Operação salva com sucesso!', 'success')
             print(f"Operation saved to database: {new_operation}")
 
             return redirect(url_for('show_portfolio'))
