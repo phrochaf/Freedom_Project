@@ -34,57 +34,82 @@ def index():
                            title=page_title, 
                            task_list=investor_tasks)
 
+# In app.py, make sure this is your show_portfolio function
+
 @app.route('/portfolio')
 def show_portfolio():
+    print("\n--- DEBUG: Loading /portfolio page ---")
 
-        # 1. Get operations from database
+    # 1. Query the database
+    try:
         db_operations = db.session.scalars(db.select(Operation).order_by(Operation.operation_date)).all()
-        calculated_portfolio = Portfolio()
-        for op in db_operations:
-            calculated_portfolio.register_operation(op)
-        
-        #2. Fetch data from Yahoo Finance
-        enriched_positions = []
-        total_market_value = Decimal('0.00')
+        print(f"[OK] Found {len(db_operations)} operations in the database.")
+        if db_operations:
+            print(f"   -> First operation from DB is: {db_operations[0]}")
+    except Exception as e:
+        print(f"[ERROR] Could not query operations from database: {e}")
+        return "Error reading from database."
 
-        #Get all tickers from database
-        tickers_list = [pos.asset.ticker for pos in calculated_portfolio._positions.values() if pos.quantity > 0]
+    # 2. Process the operations with our calculator
+    calculated_portfolio = Portfolio()
+    for op in db_operations:
+        calculated_portfolio.register_operation(op)
+    
+    print(f"[OK] Portfolio calculator processed. Number of positions found: {len(calculated_portfolio._positions)}")
+    if calculated_portfolio._positions:
+        first_pos_ticker = list(calculated_portfolio._positions.keys())[0]
+        first_pos_details = calculated_portfolio._positions[first_pos_ticker]
+        print(f"   -> Details of first calculated position ({first_pos_ticker}): Qty={first_pos_details.quantity}")
 
-        if tickers_list:
-            #Append ".SA" to tickers for Yahoo Finance
-            tickers_yahoo_string = " ".join(f"{ticker}.SA" for ticker in tickers_list)
+    # 3. Prepare to fetch market data
+    enriched_positions = []
+    total_market_value = Decimal('0.00')
+    tickers_list = [pos.asset.ticker for pos in calculated_portfolio._positions.values() if pos.quantity > 0]
+    
+    print(f"[OK] Tickers with quantity > 0 to be fetched from yfinance: {tickers_list}")
+
+    if tickers_list:
+        try:
+            tickers_yahoo_string = " ".join([f"{ticker}.SA" for ticker in tickers_list])
             tickers_data = yf.Tickers(tickers_yahoo_string)
-
-        for position_obj in calculated_portfolio._positions.values():
-            if position_obj.quantity <= 0:
-                continue #skip if no quantity
-
-            ticker_str = position_obj.asset.ticker
-            ticker_data = tickers_data.tickers.get(f"{ticker_str}.SA")
-
-            current_price = ticker_data.info.get('regularMarketPrice') if ticker_data and ticker_data.info else None 
-            market_value = Decimal(str(current_price)) * position_obj.quantity if current_price else None
-            profit_loss = market_value - position_obj.total_cost if market_value else None
-
-            if market_value:
-                total_market_value += market_value
+            print("[OK] Fetched data from yfinance.")
             
-            enriched_positions.append({
-                 'position': position_obj,
-                 'current_price': current_price,
-                 'market_value': market_value,
-                 'profit_loss': profit_loss
-            })
+            for position_obj in calculated_portfolio._positions.values():
+                if position_obj.quantity <= 0:
+                    continue
+                
+                print(f"   -> Enriching data for {position_obj.asset.ticker}...")
+                
+                # ... rest of yfinance logic ...
+                current_price = tickers_data.tickers.get(f"{position_obj.asset.ticker}.SA").info.get('regularMarketPrice')
+                market_value = Decimal(str(current_price)) * position_obj.quantity if current_price else None
+                profit_loss = market_value - position_obj.total_cost if market_value else None
+                
+                if market_value:
+                    total_market_value += market_value
+                
+                enriched_positions.append({
+                    'position': position_obj, 'current_price': current_price,
+                    'market_value': market_value, 'profit_loss': profit_loss
+                })
+        except Exception as e:
+            print(f"[ERROR] Failed during yfinance data processing: {e}")
 
-        total_cost_basis = calculated_portfolio.total_cost
-        total_profit_loss = total_market_value - total_cost_basis
-        
-        #3. Render template
-        return render_template('portfolio.html',
-                                positions=enriched_positions,
-                                total_market_value=total_market_value, 
-                                total_profit_loss=total_profit_loss, 
-                                total_cost_basis=total_cost_basis)
+    print(f"[OK] Final number of positions to be sent to template: {len(enriched_positions)}")
+    
+    # 4. Final Calculations and Rendering
+    total_cost_basis = calculated_portfolio.total_cost
+    total_profit_loss = total_market_value - total_cost_basis
+    
+    print("[OK] Rendering template...")
+    return render_template('portfolio.html', 
+                           positions=enriched_positions, 
+                           total_cost=total_cost_basis,
+                           total_market_value=total_market_value, 
+                           total_profit_loss=total_profit_loss)
+
+
+
 
 @app.route('/add_operation', methods=['GET','POST'])
 def add_operation():
@@ -112,7 +137,7 @@ def add_operation():
                 asset_obj = Asset(
                     ticker=ticker_str,
                     name=asset_name,
-                    type=asset_type
+                    asset_type=asset_type
                 )
                 db.session.add(asset_obj)
                 db.session.commit()
@@ -213,6 +238,6 @@ def analysis():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        
+
     app.run(debug=True)
 

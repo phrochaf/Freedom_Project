@@ -1,27 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nova Operação</title>
-    <style>
-        body { font-family: sans-serif; margin: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; }
-        input[type="text"], input[type="number"], input[type="date"], select {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-        }
-        input[type="submit"] {
-            background-color: #4CAF50; color: white; padding: 10px 15px;
-            border: none; border-radius: 4px; cursor: pointer;
-        }
-        input[type="submit"]:hover { background-color: #45a049; }
-        .nav-link { margin-top: 20px; display: block; } 
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Meu Portfólio{% endblock %}
+
+{% block content %}
     <h1>Nova Operação</h1>
 
     <form action="{{ url_for('add_operation') }}" method="POST">
@@ -51,8 +32,8 @@
         <div class="form-group">
             <label for="operation_type">Tipo de Operação:</label>
             <select id="operation_type" name="operation_type" required>
-                <option value="Compra">Buy (Compra)</option>
-                <option value="Venda">Sell (Venda)</option>
+                <option value="Buy">Buy (Compra)</option>
+                <option value="Sell">Sell (Venda)</option>
             </select>
         </div>
         <div class="form-group">
@@ -83,5 +64,4 @@
     <a href="{{ url_for('show_portfolio') }}" class="nav-link">View Portfolio</a>
     <a href="{{ url_for('index') }}" class="nav-link">Back to Home</a>
     
-</body>
-</html>
+    {% endblock %}
