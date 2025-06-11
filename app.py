@@ -4,15 +4,15 @@ import matplotlib
 matplotlib.use('Agg') # Set the backend for Matplotlib to work in a web server context
 import matplotlib.pyplot as plt # The primary plotting interface
 import os # To handle file paths
-
 from flask import Flask, render_template, request, redirect, url_for
 from database import db
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
-from src.models.asset import Ativo
-from src.models.operation import Operacao
-from src.models.portfolio import Carteira
+from src.models.asset import Asset
+from src.models.operation import Operation
+from src.models.portfolio import Portfolio
+from src.models.earning import Earning
 
 app = Flask(__name__)
 
@@ -21,70 +21,70 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-
-
 @app.route('/')
 def index():
-    titulo_dinamico = "Página Inicial Dinâmica do Gestor"
-    tarefas_investidor= [
-        "Revisar o resumo da carteira",
-        "Analisar novos FIIs para investir",
-        "Registrar as últimas operações de compra/venda",
-        "Estudar sobre diversificação de ativos"
+    page_title = "Freedom Investment Manager"
+    investor_tasks = [
+        "Review the portfolio summary",
+        "Analyze new assets for investment",
+        "Register the latest buy/sell operations",
+        "Study asset diversification"
     ]
-    return render_template('index.html', titulo=titulo_dinamico, lista_de_tarefas=tarefas_investidor)
+    return render_template('index.html', 
+                           title=page_title, 
+                           task_list=investor_tasks)
 
 @app.route('/portfolio')
 def show_portfolio():
 
         # 1. Get operations from database
-        operacoes_db = db.session.scalars(db.select(Operacao).order_by(Operacao.data_operacao)).all()
-        carteira_calculada = Carteira()
-        for op in operacoes_db:
-            carteira_calculada.registrar_operacao(op)
+        db_operations = db.session.scalars(db.select(Operation).order_by(Operation.operation_date)).all()
+        calculated_portfolio = Portfolio()
+        for op in db_operations:
+            calculated_portfolio.register_operation(op)
         
         #2. Fetch data from Yahoo Finance
-        posicoes_enriquecidas = []
+        enriched_positions = []
         total_market_value = Decimal('0.00')
 
         #Get all tickers from database
-        tickers_list = [pos.ativo.ticker for pos in carteira_calculada._posicoes.values() if pos.quantidade > 0]
+        tickers_list = [pos.asset.ticker for pos in calculated_portfolio._positions.values() if pos.quantity > 0]
 
         if tickers_list:
             #Append ".SA" to tickers for Yahoo Finance
             tickers_yahoo_string = " ".join(f"{ticker}.SA" for ticker in tickers_list)
+            tickers_data = yf.Tickers(tickers_yahoo_string)
 
-        tickers_data = yf.Tickers(tickers_yahoo_string)
-
-        for posicao_obj in carteira_calculada._posicoes.values():
-            if posicao_obj.quantidade <= 0:
+        for position_obj in calculated_portfolio._positions.values():
+            if position_obj.quantity <= 0:
                 continue #skip if no quantity
 
-            ticker_str = posicao_obj.ativo.ticker
+            ticker_str = position_obj.asset.ticker
             ticker_data = tickers_data.tickers.get(f"{ticker_str}.SA")
 
-            current_price = None
-            if ticker_data and ticker_data.info:
-                current_price = ticker_data.info.get('regularMarketPrice')
-            
-            market_value = Decimal(str(current_price)) * posicao_obj.quantidade if current_price else None
-            profit_loss = market_value - posicao_obj.valor_total_investido if market_value else None
+            current_price = ticker_data.info.get('regularMarketPrice') if ticker_data and ticker_data.info else None 
+            market_value = Decimal(str(current_price)) * position_obj.quantity if current_price else None
+            profit_loss = market_value - position_obj.total_cost if market_value else None
 
             if market_value:
                 total_market_value += market_value
             
-            posicoes_enriquecidas.append({
-                 'posicao': posicao_obj,
+            enriched_positions.append({
+                 'position': position_obj,
                  'current_price': current_price,
                  'market_value': market_value,
                  'profit_loss': profit_loss
             })
 
-        total_cost_basis = carteira_calculada.valor_total_carteira
+        total_cost_basis = calculated_portfolio.total_cost
         total_profit_loss = total_market_value - total_cost_basis
         
         #3. Render template
-        return render_template('portfolio.html', posicoes=posicoes_enriquecidas, total_market_value=total_market_value, total_profit_loss=total_profit_loss, total_cost_basis=total_cost_basis)
+        return render_template('portfolio.html',
+                                positions=enriched_positions,
+                                total_market_value=total_market_value, 
+                                total_profit_loss=total_profit_loss, 
+                                total_cost_basis=total_cost_basis)
 
 @app.route('/add_operation', methods=['GET','POST'])
 def add_operation():
@@ -92,59 +92,56 @@ def add_operation():
         try:
             # 1. Get data from form
             ticker_str = request.form.get('ticker','').strip().upper()
-            nome_empresa = request.form.get('nome_empresa','').strip()
-            tipo_ativo = request.form.get('tipo_ativo')
-            
-            # Other data
-            tipo_operacao = request.form.get('tipo_operacao')
-            quantidade = Decimal(request.form.get('quantidade'))
-            preco_unitario = Decimal(request.form.get('preco_unitario'))
-            data_operacao_str = request.form.get('data_operacao')
-            data_operacao = datetime.strptime(data_operacao_str, '%Y-%m-%d').date()
-            custos_operacionais = Decimal(request.form.get('custos_operacionais', '0'))
+            asset_name = request.form.get('asset_name','').strip()
+            asset_type = request.form.get('asset_type')
+            operation_type = request.form.get('operation_type')
+            quantity = Decimal(request.form.get('quantity'))
+            unit_price = Decimal(request.form.get('unit_price'))
+            operation_date_str = request.form.get('operation_date')
+            operation_date = datetime.strptime(operation_date_str, '%Y-%m-%d').date()
+            costs = Decimal(request.form.get('costs', '0'))
 
             # 2. Database Logic
-            ativo_obj = db.session.scalar(db.select(Ativo).filter_by(ticker=ticker_str))
+            asset_obj = db.session.scalar(db.select(Asset).filter_by(ticker=ticker_str))
 
-            if ativo_obj is None:
-                if not nome_empresa or not tipo_ativo:
-                    print(f"ERRO: Ticker '{ticker_str}' é novo, mas nome ou tipo não foram fornecidos.")
+            if asset_obj is None:
+                if not asset_name or not asset_type:
+                    print(f"ERROR: Ticker '{ticker_str}' is new, but name or type were not provided.")
                     return redirect(url_for('add_operation'))
 
-                ativo_obj = Ativo(
+                asset_obj = Asset(
                     ticker=ticker_str,
-                    nome_empresa_ou_fundo=nome_empresa,
-                    tipo_ativo=tipo_ativo
+                    name=asset_name,
+                    type=asset_type
                 )
-                db.session.add(ativo_obj)
+                db.session.add(asset_obj)
                 db.session.commit()
-                print(f"Ativo '{ticker_str}' criado com sucesso.")
+                print(f"Asset '{ticker_str}' created successfully.")
             
             # 3. Create operation object
-            nova_operacao = Operacao(
-                data_operacao=data_operacao,
-                quantidade=quantidade,
-                preco_unitario=preco_unitario,
-                tipo_operacao=tipo_operacao,
-                custos_operacionais=custos_operacionais,
-                ativo_rel=ativo_obj
+            new_operation = Operation(
+                operation_date=operation_date,
+                quantity=quantity,
+                unit_price=unit_price,
+                operation_type=operation_type,
+                costs=costs,
+                asset=asset_obj # Use the 'asset' relationship
             )
-
             # 4. Add new operation
-            db.session.add(nova_operacao)
+            db.session.add(new_operation)
             db.session.commit()
 
-            print(f"Operação salva no banco de dados: {nova_operacao}")
+            print(f"Operation saved to database: {new_operation}")
 
             return redirect(url_for('show_portfolio'))
         
         except (ValueError, InvalidOperation) as e:
             db.session.rollback()
-            print(f"Erro ao processar formulário: {e}")
+            print(f"Error processing form: {e}")
             return redirect(url_for('add_operation'))
         except Exception as e:
             db.session.rollback()
-            print(f"Erro inesperado ao processar formulário: {e}")
+            print(f"Unexpected error processing form: {e}")
             import traceback
             traceback.print_exc()
             return redirect(url_for('add_operation'))
@@ -154,22 +151,22 @@ def add_operation():
 @app.route('/analysis')
 def analysis():
     # Get operations from database
-    operacoes_db = db.session.scalars(db.select(Operacao)).all()
+    db_operations = db.session.scalars(db.select(Operation)).all()
 
-    if not operacoes_db:
+    if not db_operations:
         return "<h3>No operations in the database to analyze.</h3><p><a href='/add_operation'>Add one!</a></p>"
     
     # Create the DataFrame
     data_for_df = [
         {
-            'date': op.data_operacao,
-            'ticker': op.ativo_rel.ticker,
-            'type': op.tipo_operacao,
-            'quantity': op.quantidade,
-            'unit_price': op.preco_unitario,
-            'costs': op.custos_operacionais,
+            'date': op.operation_date,
+            'ticker': op.asset.ticker,
+            'type': op.operation_type,
+            'quantity': op.quantity,
+            'unit_price': op.unit_price,
+            'costs': op.costs,
         }
-        for op in operacoes_db
+        for op in db_operations
     ]
 
     #3. Create pandas DataFrame
@@ -181,22 +178,21 @@ def analysis():
 
     # Pandas Analysis
     #Filter for buys ops
-    df_compras = df[df['type'] == 'Compra'].copy()
+    df_buys = df[df['type'] == 'Buy'].copy()
 
     #Total cost for op
-    df_compras['total_cost'] = df_compras['quantity'] * df_compras['unit_price'] + df_compras['costs']
+    df_buys['total_cost'] = df_buys['quantity'] * df_buys['unit_price'] + df_buys['costs']
 
     #Group by ticker and sum costs
-    investido_por_ativo = df_compras.groupby('ticker')['total_cost'].sum()
+    invested_by_asset = df_buys.groupby('ticker')['total_cost'].sum()
 
     # Matplotlib Plot
 
-    # Create the Plot
     plt.figure(figsize=(10,6))
-    investido_por_ativo.plot(kind='bar', color='skyblue')
-    plt.title('Total Investido por Ativo')
-    plt.xlabel('Ativo')
-    plt.ylabel('Total Investido (R$)')
+    invested_by_asset.plot(kind='bar', color='skyblue')
+    plt.title('Total Invested by Asset')
+    plt.xlabel('Asset')
+    plt.ylabel('Total Invested (R$)')
     plt.xticks(rotation=45)
     plt.tight_layout()
 
@@ -209,7 +205,9 @@ def analysis():
     plt.close()
 
     #Render the template with the plot
-    return render_template('analysis.html', plot_url=img_path_relative, data_html=investido_por_ativo.to_frame().to_html(classes='data_table', float_format='{:,.2f}'.format))
+    return render_template('analysis.html',
+                            plot_url=img_path_relative,
+                            data_html=invested_by_asset.to_frame().to_html(classes='data_table', float_format='{:,.2f}'.format))
 
 
 if __name__ == '__main__':
