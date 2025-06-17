@@ -5,7 +5,7 @@ matplotlib.use('Agg') # Set the backend for Matplotlib to work in a web server c
 import matplotlib.pyplot as plt # The primary plotting interface
 import os # To handle file paths
 from flask import Flask, render_template, request, redirect, url_for, abort, flash
-from database import db
+from src.database import db
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
