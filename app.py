@@ -13,6 +13,8 @@ from src.models.asset import Asset
 from src.models.operation import Operation
 from src.models.portfolio import Portfolio
 from src.models.earning import Earning
+from src.forms import RegistrationForm
+from src.models.user import User
 
 app = Flask(__name__)
 
@@ -287,10 +289,29 @@ def analysis():
                             plot_url=img_path_relative,
                             data_html=invested_by_asset.to_frame().to_html(classes='data_table', float_format='{:,.2f}'.format))
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+
+        flash('Registration successful!', 'success')
+        return redirect(url_for('index'))
+    return render_template('register.html', title='Register', form=form)
 
 if __name__ == '__main__':
     with app.app_context():
+        
+        from src.models.user import User
+        from src.models.asset import Asset
+        from src.models.operation import Operation
+        from src.models.earning import Earning
+        
         db.create_all()
+        print("Database tables created successfully.")
 
     app.run(debug=True)
 

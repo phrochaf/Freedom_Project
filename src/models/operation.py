@@ -1,6 +1,6 @@
 from datetime import date
 from decimal import Decimal
-from database import db
+from ..database import db
 from .asset import Asset
 
 class Operation(db.Model):
@@ -14,7 +14,10 @@ class Operation(db.Model):
     operation_type = db.Column(db.String(10), nullable=False)
     costs = db.Column(db.Numeric(10, 2), nullable=False, default=Decimal('0.00'))
 
-    asset = db.relationship('Asset', backref=db.backref('operations', lazy=True))
+    asset = db.relationship('Asset', back_populates='operations')
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', back_populates='operations')
 
     def gross_value(self) -> Decimal:
         return self.quantity * self.unit_price

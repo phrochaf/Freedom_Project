@@ -1,6 +1,6 @@
 from datetime import date
 from decimal import Decimal
-from database import db
+from ..database import db
 from .asset import Asset
 
 class Earning(db.Model):
@@ -12,7 +12,8 @@ class Earning(db.Model):
     net_value_per_unit = db.Column(db.Numeric(18, 2), nullable=False)
     earning_type = db.Column(db.String(50), nullable=False)
 
-    asset = db.relationship('Asset', backref=db.backref('earnings', lazy=True))
+    asset = db.relationship('Asset', back_populates='earnings') 
+    user = db.relationship('User', back_populates='earnings')
 
     def __str__(self):
         ticker = self.asset.ticker if self.asset else "N/A"
