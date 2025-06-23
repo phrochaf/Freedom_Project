@@ -3,8 +3,9 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg') # Set the backend for Matplotlib to work in a web server context
 import matplotlib.pyplot as plt # The primary plotting interface
-import os # To handle file paths
+import os 
 from flask import Flask, render_template, request, redirect, url_for, abort, flash
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from src.database import db
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -13,7 +14,7 @@ from src.models.asset import Asset
 from src.models.operation import Operation
 from src.models.portfolio import Portfolio
 from src.models.earning import Earning
-from src.forms import RegistrationForm
+from src.forms import RegistrationForm, LoginForm
 from src.models.user import User
 
 app = Flask(__name__)
@@ -23,6 +24,16 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///investiments.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
+
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access this page.'
+login_manager.login_message_category = 'info'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, int(user_id))
+
 
 @app.route('/')
 def index():
@@ -40,12 +51,15 @@ def index():
 # In app.py, make sure this is your show_portfolio function
 
 @app.route('/portfolio')
+@login_required
 def show_portfolio():
     print("\n--- DEBUG: Loading /portfolio page ---")
 
     # 1. Query the database
     try:
-        db_operations = db.session.scalars(db.select(Operation).order_by(Operation.operation_date)).all()
+        db_operations = db.session.scalars(
+            db.select(Operation).where(Operation.user_id == current_user.id).order_by(Operation.operation_date)
+        ).all()
         print(f"[OK] Found {len(db_operations)} operations in the database.")
         if db_operations:
             print(f"   -> First operation from DB is: {db_operations[0]}")
@@ -115,15 +129,22 @@ def show_portfolio():
 def list_operations():
     """Queries and displays a list of all operations."""
     # Query the database for all operations, ordering by most recent first
-    all_operations = db.session.scalars(db.select(Operation).order_by(Operation.operation_date.desc())).all()
+    all_operations = db.session.scalars(
+        db.select(Operation).where(Operation.user_id == current_user.id).order_by(Operation.operation_date.desc())
+    ).all()
     
     return render_template('operations_list.html', operations=all_operations)
 
 @app.route('/delete_operation/<int:operation_id>', methods=['POST'])
+@login_required
 def delete_operation(operation_id):
     op_to_delete = db.session.get(Operation, operation_id)
     if op_to_delete is None:
         abort(404)
+
+    if op_to_delete.user_id != current_user.id:
+        abort(403)
+    
     try:
         db.session.delete(op_to_delete)
         db.session.commit()
@@ -136,10 +157,14 @@ def delete_operation(operation_id):
     return redirect(url_for('list_operations')) 
 
 @app.route('/edit_operation/<int:operation_id>', methods=['GET','POST'])
+@login_required
 def edit_operation(operation_id):
     op_to_edit = db.session.get(Operation, operation_id)
     if op_to_edit is None:
         abort(404)
+    
+    if op_to_edit.user_id != current_user.id:
+        abort(403)
     
     if request.method == 'POST':
         try:
@@ -167,6 +192,7 @@ def edit_operation(operation_id):
     return render_template('edit_operation.html', op=op_to_edit) 
 
 @app.route('/add_operation', methods=['GET','POST'])
+@login_required
 def add_operation():
     if request.method == 'POST':
         try:
@@ -182,7 +208,9 @@ def add_operation():
             costs = Decimal(request.form.get('costs', '0'))
 
             # 2. Database Logic
-            asset_obj = db.session.scalar(db.select(Asset).filter_by(ticker=ticker_str))
+            asset_obj = db.session.scalar(
+                db.select(Asset).where(Asset.ticker == ticker_str, Asset.user_id == current_user.id)
+            )
 
             if asset_obj is None:
                 if not asset_name or not asset_type:
@@ -192,46 +220,43 @@ def add_operation():
                 asset_obj = Asset(
                     ticker=ticker_str,
                     name=asset_name,
-                    asset_type=asset_type
+                    asset_type=asset_type,
+                    user=current_user
                 )
                 db.session.add(asset_obj)
-                db.session.commit()
-                print(f"Asset '{ticker_str}' created successfully.")
-            
+
             # 3. Create operation object
             new_operation = Operation(
+                asset=asset_obj,
+                user=current_user,
                 operation_date=operation_date,
                 quantity=quantity,
                 unit_price=unit_price,
                 operation_type=operation_type,
-                costs=costs,
-                asset=asset_obj # Use the 'asset' relationship
+                costs=costs
             )
-            # 4. Add new operation
+            
+            #4. Add asset to database
             db.session.add(new_operation)
             db.session.commit()
-            flash('Operação salva com sucesso!', 'success')
-            print(f"Operation saved to database: {new_operation}")
 
+            flash(f"Asset '{ticker_str}' created successfully.", 'success')
             return redirect(url_for('show_portfolio'))
-        
-        except (ValueError, InvalidOperation) as e:
+
+        except Exception as e:
             db.session.rollback()
             print(f"Error processing form: {e}")
             return redirect(url_for('add_operation'))
-        except Exception as e:
-            db.session.rollback()
-            print(f"Unexpected error processing form: {e}")
-            import traceback
-            traceback.print_exc()
-            return redirect(url_for('add_operation'))
-
-    return render_template('add_operation.html')
+        
+    return render_template('add_operation.html')    
 
 @app.route('/analysis')
+@login_required
 def analysis():
     # Get operations from database
-    db_operations = db.session.scalars(db.select(Operation)).all()
+    db_operations = db.session.scalars(
+        db.select(Operation).where(Operation.user_id == current_user.id)
+    ).all()
 
     if not db_operations:
         return "<h3>No operations in the database to analyze.</h3><p><a href='/add_operation'>Add one!</a></p>"
@@ -301,6 +326,35 @@ def register():
         flash('Registration successful!', 'success')
         return redirect(url_for('index'))
     return render_template('register.html', title='Register', form=form)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = db.session.scalar(db.select(User).where(User.username == form.username.data))
+
+        if user is None or not user.check_password(form.password.data):
+            flash('Invalid username or password', 'danger')
+            return redirect(url_for('login'))
+
+        login_user(user, remember=form.remember_me.data)
+        flash('Logged in successfully.', 'success')
+
+        next_page = request.args.get('next')
+        return redirect(next_page) if next_page else redirect(url_for('show_portfolio'))
+    
+
+    return render_template('login.html', title='Login', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('Logged out successfully.', 'success')
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     with app.app_context():
