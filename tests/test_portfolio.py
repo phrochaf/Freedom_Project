@@ -1,8 +1,8 @@
 from decimal import Decimal
 from datetime import date
-from models.asset import Asset
-from models.operation import Operation
-from models.portfolio import Portfolio
+from src.models.asset import Asset
+from src.models.operation import Operation
+from src.models.portfolio import Portfolio
 
 def test_single_buy_operation():
     """

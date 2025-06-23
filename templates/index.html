@@ -1,28 +1,27 @@
 {% extends "base.html" %}
 
-{% block title %}Meu Portfólio{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-
-    <main class="container mt-4">
-        <h1>{{ title }}</h1>
-        <p>Esta é a página inicial do seu gestor de investimentos pessoal.</p>
-        
-        <h2 class="mt-4">Próximos Passos Sugeridos:</h2>
-        {% if task_list %}
-            <div class="list-group">
-                {% for task in task_list %}
-                    <a href="#" class="list-group-item list-group-item-action">{{ task }}</a>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p>Nenhuma tarefa pendente!</p>
-        {% endif %}
-
-        <div class="mt-4">
-            <a class="btn btn-primary" href="{{ url_for('show_portfolio') }}">Ver meu Portfólio</a>
-            <a class="btn btn-secondary" href="{{ url_for('add_operation') }}">Adicionar Operação</a>
+    <div class="py-5 px-4 mb-4 bg-light rounded-3">
+        <div class="container-fluid">
+            <h1 class="display-5 fw-bold">{{ title }}</h1>
+            <p class="col-md-8 fs-4">Esta é a página inicial do seu gestor de investimentos pessoal. Use a navegação acima para ver seu portfólio ou adicionar novas operações.</p>
         </div>
-    </main>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    {% endblock %}
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Próximos Passos Sugeridos:</h2>
+            {% if task_list %}
+                <div class="list-group">
+                    {% for task in task_list %}
+                        <a href="#" class="list-group-item list-group-item-action">{{ task }}</a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>Nenhuma tarefa pendente!</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
