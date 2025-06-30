@@ -3,12 +3,16 @@
 {% block title %}Meu Portfólio{% endblock %}
 
 {% block content %}
-    <h1>Meu Portfolio de Investimentos</h1>
-
-    {% if positions %}
-        <table class="table table-striped table-bordered">
-            <thead>
-                <tr>
+<div class="card">
+    <div class="card-header">
+        <h1 class="mb-0">Meu Portfólio de Investimentos</h1>
+    </div>
+    <div class="card-body">
+        {% if positions %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle">
+                    <thead>
+                        <tr>
                     <th>Ativo</th>
                     <th>Quantidade</th>
                     <th>Preço Médio</th>
@@ -70,12 +74,15 @@
                 </tr>
             </tfoot>
         </table>
-    {% else %}
-        <p>Nenhuma posição registrada.</p>
-    {% endif %}
-
-    <div class="nav-links">
-        <a href="{{ url_for('add_operation') }}">Adicionar Nova Operação</a>
-        <a href="{{ url_for('index') }}">Voltar para a página inicial</a>
     </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+          Seu portfólio está vazio. <a href="{{ url_for('add_operation') }}" class="alert-link">Adicione uma operação</a> para começar!
+        </div>
+    {% endif %}
+</div>
+<div class="card-footer text-end">
+     <a href="{{ url_for('add_operation') }}" class="btn btn-success">Adicionar Nova Operação</a>
+</div>
+</div>
     {% endblock %}

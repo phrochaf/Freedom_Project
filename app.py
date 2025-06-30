@@ -14,7 +14,7 @@ from src.models.asset import Asset
 from src.models.operation import Operation
 from src.models.portfolio import Portfolio
 from src.models.earning import Earning
-from src.forms import RegistrationForm, LoginForm
+from src.forms import RegistrationForm, LoginForm, OperationForm
 from src.models.user import User
 
 app = Flask(__name__)
@@ -194,61 +194,53 @@ def edit_operation(operation_id):
 @app.route('/add_operation', methods=['GET','POST'])
 @login_required
 def add_operation():
-    if request.method == 'POST':
+    form = OperationForm()
+
+    if form.validate_on_submit():
         try:
             # 1. Get data from form
-            ticker_str = request.form.get('ticker','').strip().upper()
-            asset_name = request.form.get('asset_name','').strip()
-            asset_type = request.form.get('asset_type')
-            operation_type = request.form.get('operation_type')
-            quantity = Decimal(request.form.get('quantity'))
-            unit_price = Decimal(request.form.get('unit_price'))
-            operation_date_str = request.form.get('operation_date')
-            operation_date = datetime.strptime(operation_date_str, '%Y-%m-%d').date()
-            costs = Decimal(request.form.get('costs', '0'))
+            ticker_str = form.ticker.data.strip().upper()
 
-            # 2. Database Logic
             asset_obj = db.session.scalar(
                 db.select(Asset).where(Asset.ticker == ticker_str, Asset.user_id == current_user.id)
             )
 
             if asset_obj is None:
-                if not asset_name or not asset_type:
-                    print(f"ERROR: Ticker '{ticker_str}' is new, but name or type were not provided.")
+                if not form.asset_name.data or not form.asset_type.data:
+                    flash('Nome ou tipo de ativo não informado.', 'danger')
                     return redirect(url_for('add_operation'))
-
+                
                 asset_obj = Asset(
                     ticker=ticker_str,
-                    name=asset_name,
-                    asset_type=asset_type,
+                    name=form.asset_name.data.strip(),
+                    asset_type=form.asset_type.data,
                     user=current_user
                 )
                 db.session.add(asset_obj)
 
-            # 3. Create operation object
+            # 2. Create operation object
             new_operation = Operation(
+                operation_date=form.operation_date.data,
+                quantity=form.quantity.data,
+                unit_price=form.unit_price.data,
+                operation_type=form.operation_type.data,
+                costs=form.costs.data,
                 asset=asset_obj,
-                user=current_user,
-                operation_date=operation_date,
-                quantity=quantity,
-                unit_price=unit_price,
-                operation_type=operation_type,
-                costs=costs
+                user=current_user
             )
-            
-            #4. Add asset to database
+
+            # 3. Add operation to database
             db.session.add(new_operation)
             db.session.commit()
 
-            flash(f"Asset '{ticker_str}' created successfully.", 'success')
+            flash(f"Operação de {form.operation_type.data} de {form.quantity.data} unidades de {ticker_str} registrada com sucesso.", 'success')
             return redirect(url_for('show_portfolio'))
-
+        
         except Exception as e:
             db.session.rollback()
             print(f"Error processing form: {e}")
-            return redirect(url_for('add_operation'))
-        
-    return render_template('add_operation.html')    
+            flash('Erro ao processar a operação. Por favor, tente novamente.', 'danger')
+    return render_template('add_operation.html', form=form)
 
 @app.route('/analysis')
 @login_required

@@ -25,4 +25,4 @@ EXPOSE 5000
 # Step 7: Define the command to run when the container starts.
 # This will start the Flask development server.
 # We use --host=0.0.0.0 to make the server accessible from outside the container.
-CMD ["flask", "run", "--host=0.0.0.0"]
+CMD ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:5000", "wsgi:app"]

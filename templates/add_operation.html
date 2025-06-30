@@ -3,65 +3,82 @@
 {% block title %}Meu Portfólio{% endblock %}
 
 {% block content %}
-    <h1>Nova Operação</h1>
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h1 class="mb-0">Adicionar Nova Operação</h1>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
 
-    <form action="{{ url_for('add_operation') }}" method="POST">
-        <div class="mb-3">
-            <label for="ticker" class="form-label">Ticker:</label>
-            <input type="text" id="ticker" name="ticker" placeholder="e.g., PETR4, BBSE3" required class="form-control">
-        </div>
-    
-        <div class="mb-3">
-            <label for="asset_name" class="form-label">Nome da Empresa ou Fundo (e.g., Petrobras S.A.):</label>
-            <p style="font-size: 0.8em; color: #666; margin-top: -10px;">(Only needed if ticker is new)</p>
-            <input type="text" id="asset_name" name="asset_name" class="form-control">
-        </div>
-    
-        <div class="mb-3">
-            <label for="asset_type" class="form-label">Tipo de Ativo:</label>
-            <p style="font-size: 0.8em; color: #666; margin-top: -10px;">(Only needed if ticker is new)</p>
-            <select id="asset_type" name="asset_type" class="form-select">
-                <option value="">-- Select Type (if new) --</option>
-                <option value="Ação">Stock (Ação)</option>
-                <option value="FII">Real Estate Fund (FII)</option>
-                <option value="BDR">BDR</option>
-                <option value="ETF">ETF</option>
-                <option value="Renda Fixa">Fixed Income (Renda Fixa)</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label for="operation_type" class="form-label">Tipo de Operação:</label>
-            <select id="operation_type" name="operation_type" required class="form-select">
-                <option value="Buy">Buy (Compra)</option>
-                <option value="Sell">Sell (Venda)</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <label for="quantity" class="form-label">Quantidade:</label>
-            <input type="number" id="quantity" name="quantity" step="any" placeholder="e.g., 100 or 0.5" required class="form-control">
-        </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="ticker" class="form-label">Ticker:</label>
+                            <input type="text" class="form-control" id="ticker" name="ticker" required>
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label for="asset_name" class="form-label">Nome do Ativo</label>
+                            <input type="text" class="form-control" id="asset_name" name="asset_name">
+                            <div class="form-text">Apenas se for um ticker novo.</div>
+                        </div>
+                    </div>
 
-        <div class="mb-3">
-            <label for="unit_price" class="form-label">Preço por Unidade (R$):</label>
-            <input type="number" id="unit_price" name="unit_price" step="0.01" placeholder="e.g., 30.50" required class="form-control">
-        </div>
+                    <div class="mb-3">
+                        {{ form.asset_type.label(class="form-label") }}
+                        {{ form.asset_type(class="form-select") }}
 
-        <div class="mb-3">
-            <label for="operation_date" class="form-label">Data da Operação:</label>
-            <input type="date" id="operation_date" name="operation_date" required class="form-control">
-        </div>
+                        <div class="form-text">(Apenas para novos ativos</div>
 
-        <div class="mb-3">
-            <label for="costs" class="form-label">Custos Operacionais (R$):</label>
-            <input type="number" id="costs" name="costs" step="0.01" value="0.00" required class="form-control">
-        </div>
-        
-        <div class="mb-3">
-            <input type="submit" value="Save Operation to Database" class="btn btn-primary">
-        </div>
-    </form>
+                        {% if form.asset_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.asset_type.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr class="my-4">
 
-    <a href="{{ url_for('show_portfolio') }}" class="nav-link">View Portfolio</a>
-    <a href="{{ url_for('index') }}" class="nav-link">Back to Home</a>
-    
-    {% endblock %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="operation_type" class="form-label">Tipo de Operação:</label>
+                            <select class="form-select" id="operation_type" name="operation_type" required>
+                                <option value="Buy">Compra</option>
+                                <option value="Sell">Venda</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="operation_date" class="form-label">Data da Operação:</label>
+                            <input type="date" class="form-control" id="operation_date" name="operation_date" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="quantity" class="form-label">Quantidade:</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" step="any" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="unit_price" class="form-label">Preço Unitário (R$):</label>
+                            <input type="number" class="form-control" id="unit_price" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="costs" class="form-label">Custos Operacionais (R$):</label>
+                        <input type="number" class="form-control" id="costs" name="costs" step="0.01" value="0.00" required>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('show_portfolio') }}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Salvar Operação</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
