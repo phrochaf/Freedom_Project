@@ -20,7 +20,8 @@ from src.models.user import User
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'a_very_secret_and_random_string_123'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///investiments.db'
+database_uri = os.environ.get('DATABASE_URL') or 'sqlite:///investments.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
