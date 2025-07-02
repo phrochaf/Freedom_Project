@@ -14,7 +14,7 @@ def test_registration_and_login(client, db):
     }, follow_redirects=True)
 
     assert response.status_code == 200
-    assert "Parabéns, você foi registrado com sucesso!" in response.data.decode('utf-8')
+    assert "Registration successful!" in response.data.decode('utf-8')
 
     # 3. Test successful login
     response = client.post('/login', data={
