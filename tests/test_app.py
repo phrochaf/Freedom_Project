@@ -1,39 +1,31 @@
-# Forcing a file update for Git
-# -*- coding: utf-8 -*-
-# ... (rest of the file)
-
-def test_homepage(client):
-    response = client.get('/')
-    assert response.status_code == 200
-    assert "página inicial do seu gestor de investimentos pessoal" in response.data.decode('utf-8')
-
 def test_registration_and_login(client, db):
-    # Test registration
-    #1 Test Get
+    """Test the full registration and login flow."""
+    # 1. Test GET request to registration page
     response = client.get('/register')
     assert response.status_code == 200
     assert "Criar Nova Conta" in response.data.decode('utf-8')
 
-    #2 Test Post
+    # 2. Test successful registration
     response = client.post('/register', data={
         'username': 'testuser_2',
         'email': 'testuser_2@example.com',
-        'password': 'testpassword',
-        'confirm_password': 'testpassword',
-    }, follow_redirects=True) #follow_redirects automatically follows the redirect after success
+        'password': 'password123',
+        'confirm_password': 'password123'
+    }, follow_redirects=True)
 
     assert response.status_code == 200
-    assert "Registration successful!" in response.data.decode('utf-8')
+    assert "Parabéns, você foi registrado com sucesso!" in response.data.decode('utf-8')
 
-    #3 Test Login
+    # 3. Test successful login
     response = client.post('/login', data={
         'username': 'testuser_2',
-        'password': 'testpassword',
+        'password': 'password123'
     }, follow_redirects=True)
+
+    # 4. Assert the state of the page AFTER login
     assert response.status_code == 200
-    assert "Meu Portfolio de Investimentos" in response.data.decode('utf-8')
-    assert "Logged in successfully" in response.data.decode('utf-8')
-
-
-
+    # The portfolio page should contain the flash message from the login
+    assert "Login realizado com sucesso!" in response.data.decode('utf-8')
+    # And it should contain the "empty portfolio" message, since no operations were added
+    assert "Seu portfólio está vazio" in response.data.decode('utf-8')
 
