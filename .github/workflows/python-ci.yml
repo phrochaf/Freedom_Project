@@ -36,24 +36,35 @@ jobs:
               run: |
                 pytest
 
-    build-and-push-docker-image:  
-        needs: test-application
-        runs-on: ubuntu-latest
-        steps:
-          - name: Check out repository code
-            uses: actions/checkout@v4
+    build-and-push-docker-image:
+      # This is our new, improved job
+      needs: test-application
+      runs-on: ubuntu-latest
+      permissions:
+        contents: read
+        packages: write # Grant permission to write packages (our Docker image)
 
-          - name: Log in to GitHub Container Registry
-            uses: docker/login-action@v3
-            with:
-                registry: ghcr.io
-                username: ${{ github.actor }}
-                password: ${{ secrets.PAT }}
+      steps:
+        - name: Check out repository code
+          uses: actions/checkout@v4
 
-          - name: Build and push Docker image
-            uses: docker/build-push-action@v5
-            with:
-                context: .
-                push: true
-                tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
-                # Example tag will be ghcr.io/phrochaf/freedom_project:a1b2c3d4...        
+        - name: Log in to GitHub Container Registry
+          uses: docker/login-action@v3
+          with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.PAT }}
+
+        - name: Extract metadata (tags, labels) for Docker
+          id: meta # Give this step an ID so we can refer to its output
+          uses: docker/metadata-action@v5
+          with:
+            images: ghcr.io/${{ github.repository }}
+
+        - name: Build and push Docker image
+          uses: docker/build-push-action@v5
+          with:
+            context: .
+            push: true
+            tags: ${{ steps.meta.outputs.tags }}
+            labels: ${{ steps.meta.outputs.labels }}       
