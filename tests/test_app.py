@@ -25,7 +25,7 @@ def test_registration_and_login(client, db):
     # 4. Assert the state of the page AFTER login
     assert response.status_code == 200
     # The portfolio page should contain the flash message from the login
-    assert "Login realizado com sucesso!" in response.data.decode('utf-8')
+    assert "Logged in successfully" in response.data.decode('utf-8')
     # And it should contain the "empty portfolio" message, since no operations were added
     assert "Seu portfólio está vazio" in response.data.decode('utf-8')
 
