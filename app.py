@@ -348,6 +348,14 @@ def logout():
     flash('Logged out successfully.', 'success')
     return redirect(url_for('index'))
 
+
+@app.cli.command("init-db")
+def init_db_command():
+    """Creates the database tables."""
+    with app.app_context():
+        db.create_all()
+    print("Initialized the database and created all tables.")
+
 if __name__ == '__main__':
     with app.app_context():
         
