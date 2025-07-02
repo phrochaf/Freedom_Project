@@ -1,4 +1,6 @@
+# Forcing a file update for Git
 # -*- coding: utf-8 -*-
+# ... (rest of the file)
 
 def test_homepage(client):
     response = client.get('/')
